@@ -44,11 +44,20 @@ logger = logging.getLogger(__name__)
 def display_waveform(audio_bytes, rate):
     try:
         data = np.frombuffer(audio_bytes, dtype=np.int16)
+        # Normalize to [-1.0, 1.0]
+        normalized_data = data / np.iinfo(np.int16).max
+        
+        # Create time axis
+        duration = len(data) / rate
+        time_axis = np.linspace(0, duration, len(data))
+        
         plt.figure(figsize=(10, 4))
-        plt.plot(data)
+        plt.plot(time_axis, normalized_data)
         plt.title("Received Audio Waveform")
-        plt.xlabel("Samples")
-        plt.ylabel("Amplitude")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Amplitude (Normalized)")
+        # plt.ylim(-1.1, 1.1) # Removed to allow autoscaling
+        # plt.grid(True, alpha=0.3) # Removed grid
         plt.tight_layout()
         plt.savefig(IMAGE_PNG)
         plt.close()

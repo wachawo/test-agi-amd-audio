@@ -119,8 +119,8 @@ def is_silence3(frame, uniqueid, start_time, is_ulaw=False):
     average_amplitude = np.mean(np.abs(normalized.astype(np.float32)))
     
     # Threshold for absolute silence (noise floor)
-    # Using a slightly higher threshold than SILENCE_THRESHOLD might be good, but let's stick to the constants or similar logic
-    # Re-using the logic from is_silence2 for the base threshold
+    # The threshold is calculated as ZCR_THRESHOLD * zcr plus ENERGY_THRESHOLD as a constant offset.
+    # Note: ENERGY_THRESHOLD is not multiplied by any energy value here.
     zcr = np.sum(np.abs(np.diff(np.sign(normalized)))) / (2 * len(normalized))
     threshold = ZCR_THRESHOLD * zcr + ENERGY_THRESHOLD
     

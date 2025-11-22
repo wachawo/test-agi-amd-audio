@@ -1,0 +1,10 @@
+idea/
+vscode/
+__pycache__/
+*.pyc
+*.wav
+*.png
+*.zip
+AMDAIClient
+amd_audio
+.env

@@ -136,7 +136,7 @@ def is_silence3(frame, uniqueid, start_time, is_ulaw=False):
     
     # RMS Calculation
     rms = np.sqrt(np.mean(normalized.astype(np.float32)**2))
-    if rms == 0:
+    if rms < 1e-10:
         return True # Should be caught by is_quiet, but safety first
         
     # Peak Amplitude

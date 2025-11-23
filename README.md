@@ -2,6 +2,8 @@
 
 This project provides scripts for Voice Activity Detection (VAD) and Answering Machine Detection (AMD) for use with Asterisk.
 
+<img width="1000" height="400" alt="image" src="https://github.com/user-attachments/assets/a839f1f9-3b6c-4f07-bf22-ad9e2e0b2a37" />
+
 ### `amd_audio.py`
 
 An Asterisk EAGI script that performs Voice Activity Detection (VAD) and Answering Machine Detection (AMD) on an audio stream.

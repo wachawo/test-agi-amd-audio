@@ -1,5 +1,7 @@
 # Asterisk VAD and AMD Scripts
 
+<img width="1000" height="400" alt="image" src="https://github.com/user-attachments/assets/e128f1a5-67ac-4f80-96cf-3caf9caede8b" />
+
 This project provides scripts for Voice Activity Detection (VAD) and Answering Machine Detection (AMD) for use with Asterisk.
 
 <img width="1000" height="400" alt="image" src="https://github.com/user-attachments/assets/a839f1f9-3b6c-4f07-bf22-ad9e2e0b2a37" />

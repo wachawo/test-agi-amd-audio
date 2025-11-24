@@ -14,6 +14,7 @@ from urllib.request import urlopen, Request
 import numpy as np
 import math
 import traceback
+from typing import Any
 
 URL = "http://10.4.100.245:9000/a/"
 REC_SECONDS = 2.0
@@ -108,6 +109,75 @@ def is_silence2(frame, uniqueid, start_time, is_ulaw=False):
     return threshold > average_amplitude
 
 
+def is_silence3(frame, uniqueid, start_time, is_ulaw=False):
+    # Check if the audio frame is empty
+    if not frame:
+        return True
+    if is_ulaw:
+        # If frame in ulaw format then use decode_ulaw
+        ulaw_data = np.frombuffer(frame, dtype=np.uint8)
+        audio_data = np.array([decode_ulaw(byte) for byte in ulaw_data], dtype=np.int16)
+    else:
+        # Convert the audio frame into an array of int16 data
+        audio_data = np.frombuffer(frame, dtype=np.int16)
+    if len(audio_data) == 0:
+        return True
+
+    # Normalize
+    normalized = audio_data / np.iinfo(np.int16).max
+
+    # 1. Energy / Amplitude Check (Basic Silence Detection)
+    # Using Average Amplitude like is_silence2 as it's cheaper than RMS for basic gating
+    average_amplitude = np.mean(np.abs(normalized.astype(np.float32)))
+
+    # Threshold for absolute silence (noise floor)
+    # The threshold is calculated as ZCR_THRESHOLD * zcr plus ENERGY_THRESHOLD as a constant offset.
+    # Note: ENERGY_THRESHOLD is not multiplied by any energy value here.
+    zcr = np.sum(np.abs(np.diff(np.sign(normalized)))) / (2 * len(normalized))
+    threshold = ZCR_THRESHOLD * zcr + ENERGY_THRESHOLD
+
+    is_quiet = threshold > average_amplitude
+
+    if is_quiet:
+        # It is silent enough, return True
+        return True
+
+    # 2. Beep Detection (Crest Factor)
+    # If it is loud enough to be considered "not silence" by amplitude, we check if it's a beep.
+    # Beeps (pure tones) have low Crest Factor. Voice has high Crest Factor.
+
+    # RMS Calculation
+    rms: Any = np.sqrt(np.mean(normalized.astype(np.float32) ** 2))
+    if rms < 1e-10:
+        return True  # Should be caught by is_quiet, but safety first
+
+    # Peak Amplitude
+    peak = np.max(np.abs(normalized))
+
+    # Crest Factor = Peak / RMS
+    # Sine wave CF = 1.414
+    # Voice CF typically > 3 or 4
+    crest_factor = float(peak) / float(rms)
+
+    # Threshold for Beep vs Voice
+    # If CF < 2.5, it's likely a tone/beep or constant noise.
+    # If CF > 2.5, it's likely dynamic (voice).
+    BEEP_CF_THRESHOLD = 2.5
+
+    is_beep = crest_factor < BEEP_CF_THRESHOLD
+
+    logger.debug(
+        f"{uniqueid} {time.monotonic() - start_time:.2f} sec.: Amp: {average_amplitude:.3f}, CF: {crest_factor:.3f}, Beep: {is_beep}"
+    )
+
+    # If it is a beep, we treat it as silence (True)
+    if is_beep:
+        return True
+
+    # If it's not quiet and not a beep, it's voice
+    return False
+
+
 def read_data(
     f, uniqueid, rec_seconds=REC_SECONDS, timeout=TIMEOUT, vad_enabled=True, vad_mode=1
 ):
@@ -115,10 +185,12 @@ def read_data(
     if not vad_enabled:
         data = f.read(rec_size)
         return data
-    if vad_mode == 1:
-        is_silence = is_silence1
-    else:
+    if vad_mode == 3:
+        is_silence = is_silence3
+    elif vad_mode == 2:
         is_silence = is_silence2
+    else:
+        is_silence = is_silence1
 
     def sender(conn, f):
         start_time = time.monotonic()

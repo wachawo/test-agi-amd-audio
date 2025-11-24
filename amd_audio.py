@@ -6,6 +6,7 @@ import os
 import sys
 import json
 from asterisk.agi import AGI  # type: ignore
+from asterisk.agi import AGISIGHUPHangup  # type: ignore
 import logging
 import time
 from multiprocessing import Pipe, Process
@@ -230,6 +231,8 @@ def main():
                     agi.set_variable("AMDCAUSE", "MAXWORDS-4-4")
             else:
                 logger.warning(f"{uniqueid} Empty data received!")
+    except AGISIGHUPHangup:
+        logger.warning(f"{uniqueid} Hangup detected!")
     except Exception as exc:
         logger.error(f"{uniqueid} {exc}\n{traceback.format_exc()}")
         exit_code = 1
